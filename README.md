@@ -4,115 +4,103 @@
 | --- | --- | --- | --- | --- |
 | <img src="https://github.com/boostcampaitech6/level1-semantictextsimilarity-nlp-01/assets/81287077/0a2cc555-e3fc-4fb1-9c05-4c99038603b3)" width="140px" height="140px" title="Hyunwook Jeon" /> | <img src="https://github.com/boostcampaitech6/level1-semantictextsimilarity-nlp-01/assets/81287077/d500e824-f86d-4e72-ba59-a21337e6b5a3)" width="140px" height="140px" title="Suyeon Kwak" /> | <img src="https://github.com/boostcampaitech6/level1-semantictextsimilarity-nlp-01/assets/81287077/0fb3496e-d789-4368-bbac-784aeac06c89)" width="140px" height="140px" title="Gayoung Kim" /> | <img src="https://github.com/boostcampaitech6/level1-semantictextsimilarity-nlp-01/assets/81287077/77b3a062-9199-4d87-8f6e-70ecf42a1df3)" width="140px" height="140px" title="Shinwoo Kim" /> | <img src="https://github.com/boostcampaitech6/level1-semantictextsimilarity-nlp-01/assets/81287077/f3b42c80-7b82-4fa1-923f-0f11945570e6)" width="140px" height="140px" title="Yunju An" /> |
 - **전현욱**
-    - 팀 리더, ensemble 구현, 단일 모델 학습
+    - 팀 리더, Ensemble 구현, torch 모델 구현, 단일 모델 학습
 - **곽수연**
-    - Weighted Sampler 구현, 단일 모델 학습
-- **김가영**
-    - Loss function 실험, 단일 모델 학습
-- **김신우**
-    - 복합 모델 실험, K-Fold 구현, 단일 모델 학습
-- **안윤주**
     - 데이터 전처리 및 증강, 단일 모델 학습
+- **김가영**
+    - Entity Tagging 실험, Prompt 실험, 단일 모델 학습
+- **김신우**
+    - Rule-based 모델 구현, Entity Tagging 실험, 단일 모델 학습
+- **안윤주**
+    - PM, 데이터 전처리 및 증강, 단일 모델 학습
 
 # 🍍 프로젝트 기간
 
-2023.12.11 10:00 ~ 2023.12.21 19:00
+2024.01.03 10:00 ~ 2024.01.18 19:00
+
+![image](https://github.com/boostcampaitech6/level2-klue-nlp-09/assets/81287077/d52733b3-4f59-48ea-a30a-9a4e14209357)
+
 
 # 🍌 프로젝트 소개
 
-- STS(Semantic Text Similarity)란 두 텍스트가 얼마나 유사한지 판단하는 NLP Task로, 일반적으로 두 개의 문장을 입력하고 이러한 문장 쌍이 얼마나 의미적으로 서로 얼마나 유사한지를 판단하는 과제이다.
-- 본 프로젝트는 주어진 데이터셋을 바탕으로 0과 5사이의 유사도 점수를 예측하는 모델을 만드는 것에 목적을 둔다.
+- 관계 추출(Relation Extraction)은 문장의 단어(Entity)에 대한 속성과 관계를 예측하는 NLP Task 로, 비구조적인 자연어 문장에서 구조적인 triple 을 추출해 정보를 요약하고, 중요한 성분을 핵심적으로 파악할 수 있다. 
+- 본 프로젝트는 주어진 데이터셋을 바탕으로 문장 내 두 단어의 관계를 30 개의 관계 Label 에 대한 예측 확률을 추론하는 모델을 만드는 것에 목적을 둔다.
 
 # 🥥 프로젝트 구조
 
-- Train Data : 9,324개
-- Test Data : 1,100개
-- Dev Data : 550개
+- Train Data : 32,470개
+- Test Data : 7,765개
 
 ## 데이터셋 구조
 
 | Column | 설명 |
 | --- | --- |
-| id | 문장 고유 ID. 데이터의 이름, 버전, train/dev/test |
-| source | 문장의 출처 - petition(국민청원), NSMC(네이버 영화), slack(업스테이지) |
-| sentence1 | 문장 쌍의 첫번째 문장 |
-| sentence2 | 문장 쌍의 두번째 문장 |
-| label | 문장 쌍에 대한 유사도 (0~5, 소수점 첫번째 자리까지 표시) |
-| binary-label | label이 2.5 이하인 경우는 0, 나머지는 1 |
+| id | 샘플 순서 ID |
+| sentence | 관계 추출을 위한 단어들을 포함한 문장 |
+| subject_entity | Subject Entity 에 대한 정보(단어, 시작 인덱스, 끝 인덱스, 타입) |
+| object_entity | Object Entity 에 대한 정보(단어, 시작 인덱스, 끝 인덱스, 타입) |
+| label | 두 Entity 사이의 관계 (30 개의 Label) |
+| source | 샘플 출처 |
 
-## Label 점수 기준
+## Label Class 기준
 
-| label | 설명 |
-| --- | --- |
-| 5 | 두 문장의 핵심 내용이 동일하며, 부가적인 내용들도 동일함 |
-| 4 | 두 문장의 핵심 내용이 동등하며, 부가적인 내용에서는 미미한 차이가 있음 |
-| 3 | 두 문장의 핵심 내용은 대략적으로 동등하지만, 부가적인 내용에 무시하기 어려운 차이가 있음 |
-| 2 | 두 문장의 핵심 내용은 동등하지 않지만, 몇 가지 부가적인 내용을 공유함 |
-| 1 | 두 문장의 핵심 내용은 동등하지 않지만, 비슷한 주제를 다루고 있음 |
-| 0 | 두 문장의 핵심 내용이 동등하지 않고, 부가적인 내용에서도 공통점이 없음 |
+![image](https://github.com/boostcampaitech6/level2-klue-nlp-09/assets/81287077/a0fdac21-c136-4700-9ab9-e13a5541508f)
+
 
 ## 평가 지표
-- **피어슨 상관 계수 PCC(Pearson Correlation Coefficient)** : 두 변수 X와 Y간의 선형 상관 관계를 계량화한 수치
-- 정답을 정확하게 예측하는 것보다, 높은 값은 확실히 높게, 낮은 값은 확실히 낮게 전체적인 경향을 잘 예측하는 것이 중요하게 작용
+- **micro F1 score** : no_relation class 를 제외한 f1 score
+- area under the precision-recall curve (AUPRC) : 불균형 데이터에 대한 precision-recall score
 
 # 🤿 사용 모델
 
-- klue/roberta-small
 - klue/roberta-large
-- rurupang/roberta-base-finetuned-sts
 - monologg/koelectra-base-v3-discriminator
 - BM-K/KoDiffCSE-RoBERTa
-- snunlp/KR-ELECTRA-discriminator
+- nlpotato/roberta_large-ssm_wiki_e2-origin_added_korquad_e5
+- xlm-roberta-large
+- soddokayo/klue-roberta-large-klue-ner
+- sdadas/xlm-roberta-large-twitter
+- severinsimmler/xlm-roberta-longformer-large-16384
 
 # 👒 폴더 구조
 
 ```bash
 .
-├── Readme.md
-├── wrapup-report.pdf
-└── code
-    ├── KSW
-    │   └── train_kfold.py
-    ├── KSY
-    │   ├── train
-    │   │   ├── train_kfold_WRS.py
-    │   │   ├── train_koelectra.py
-    │   │   ├── train_test_aug.py
-    │   │   ├── train_test_label.py
-    │   │   ├── train_test_WeightedMSE.py
-    │   │   └── train_test_WRS.py
-    │   └── utils
-    │       ├── data_augmentation.py
-    │       ├── ensemble.py
-    │       └── inference_koelectra.py
-    ├── KGY
-    │   ├── loss_functions.py
-    │   ├── source_tagging.py
-    │   └── trainMSE.py
-    ├── AYJ
-    │   ├── model_test_fin.py
-    │   ├── model_test_fin2.py
-    │   ├── inference.py
-    │   ├── <soon update>
-    │   └── <soon update>
-    ├── JHW
-    │   ├── back_translate.py
-    │   ├── ensemble.py
-    │   └── make_train_uniform.py
-    └── final
-        ├── data
-        ├── fine-tuned
-        ├── output
-        ├── back_translate.py
-        ├── ensemble.py
-        ├── make_train_uniform.py
-        ├── inference.py
-        └── train.py
+├── EDA.ipynb
+├── README.md
+├── Wrap-up Report.pdf
+├── data_aug
+│   ├── back_translation.py
+│   ├── data_augmenation_EDA.ipynb
+│   ├── kogpt3_test.py
+│   └── kullm_test.py
+├── entity_tagging
+│   ├── Prompt.py
+│   └── typed_entity_punct.py
+├── huggingface_trainer
+│   ├── inference.py
+│   ├── load_data.py
+│   └── train.py
+├── rule_based
+│   ├── inference.py
+│   ├── load_data.py
+│   └── train.py
+├── soft_vote.ipynb
+├── soft_vote.py
+├── torch-train
+│   ├── data_handling.py
+│   ├── data_handling_tagging.py
+│   ├── inference.py
+│   ├── modeling.py
+│   ├── models.py
+│   ├── train.py
+│   └── utils.py
+└── train_validation_split.ipynb
 ```
 
 # 🍸 Leaderboard
 
-|  | pearson |
-| --- | --- |
-| Public | 0.9218 |
-| Private | 0.9311 |
+|  | micro F1-score | AUPRC |
+| --- | --- | --- |
+| Public | 76.3116 | 81.1209 |
+| Private | 74.0375 | 81.1955 |
